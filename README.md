@@ -1,0 +1,2 @@
+# wikipedia_search
+文書集合からwikipediaの似た記事を取得する
