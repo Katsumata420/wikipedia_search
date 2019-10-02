@@ -1,0 +1,9 @@
+{
+    "mappings": {
+	"properties": {
+	    "text": {"type": "text", "analyzer": "standard"},
+	    "title": {"type": "text"},
+	    "id": {"type": "keyword"}
+	}
+    }
+}
