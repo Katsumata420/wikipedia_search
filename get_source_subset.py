@@ -63,8 +63,8 @@ def main(args):
     with open('wiki_subset.csv', 'w') as f:
         for k, v in scores.items():
             if v > threshold_score:
-                print("{}, {}".format(k[0], k[1]))
-                print("{}, {}".format(k[0], k[1]), file=f)
+                print("{},{}".format(k[0], k[1]))
+                print("{},{}".format(k[0], k[1]), file=f)
                 candidate.add(k)
 
     with open('wiki_subset.pkl', 'wb') as f:
