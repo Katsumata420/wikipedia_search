@@ -22,6 +22,6 @@
 - lemmatizer.py: mecabで原形を取得するためのスクリプト
 
 ### 設定ファイル
-docker-compose.yml: elastic-searchのdockerの設定ファイル
-index_target.json: target corpusのindexの設定ファイル
-index_wiki.json: source corpusのindexの設定ファイル
+- docker-compose.yml: elastic-searchのdockerの設定ファイル
+- index_target.json: target corpusのindexの設定ファイル
+- index_wiki.json: source corpusのindexの設定ファイル
