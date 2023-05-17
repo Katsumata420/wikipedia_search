@@ -1,22 +1,36 @@
 import sys
+import os
+import random
 import pickle
 from pathlib import Path
 from lemmatizer import lemmatizer
 from elasticsearch import Elasticsearch
 from pprint import pprint
 
+import fugashi
+import ipadic
 
 client = Elasticsearch()
 INDEX_NAME = "wikipedia"
-SIZE = 2000
+SIZE = 100
 
+is_random = True
+random_size = 1000
 
 def main(args):
     input_dir = Path(args[1])
     input_files = list(input_dir.glob('**/*.txt'))
+    # input_files = list(input_dir.glob('**/*.html'))
     with open('threshold_score.txt', 'r') as f:
         for line in f:
             threshold_score = float(line.strip())
+    if is_random:
+        input_files = random.sample(input_files, random_size)
+
+    dic_dir = ipadic.DICDIR
+    mecabrc = os.path.join(dic_dir, "mecabrc")
+    mecab_option = f'-d "{dic_dir}" -r "{mecabrc}" '
+    tokenizer = fugashi.GenericTagger(mecab_option)
 
     print(f"threshold: {threshold_score}")
     scores = dict()
@@ -29,7 +43,7 @@ def main(args):
                 query += line.strip()
                 query += " "
 
-        lemma_query = lemmatizer(query)
+        lemma_query = lemmatizer(query, tokenizer)
         script_query = {
             "query": {
                 "more_like_this": {
@@ -45,7 +59,7 @@ def main(args):
         response = client.search(index=INDEX_NAME,
                                  body=script_query,
                                  size=SIZE,
-                                 request_timeout=30)
+                                 request_timeout=60)
 
         for hit in response['hits']['hits']:
             hit_title = hit['_source']['title']
