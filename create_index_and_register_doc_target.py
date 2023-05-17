@@ -1,3 +1,4 @@
+import os
 import sys
 import json
 
@@ -7,10 +8,12 @@ from elasticsearch import Elasticsearch
 from elasticsearch.helpers import bulk
 from joblib import Parallel, delayed
 
+import ipadic
+import fugashi
 
 client = Elasticsearch()
 BATCH_SIZE = 1000
-INDEX_NAME_TARGET = "target"
+INDEX_NAME_TARGET = "twitter_covid"  # target-domain name
        
         
 def index_batch(docs):
@@ -21,7 +24,7 @@ def index_batch(docs):
 def get_request(doc):
     return {"_op_type": "index",
             "_index": INDEX_NAME_TARGET,
-            "text": lemmatizer(doc['text']),
+            "text": doc['text'],
             "title": doc['title'],
             "id": doc['id']
             }
@@ -30,11 +33,17 @@ def get_request(doc):
 def main(args):
     input_dir = Path(args[1])
     input_files = list(input_dir.glob("**/*.txt"))
+    # input_files = list(input_dir.glob("**/*.html"))
 
     client.indices.delete(index=INDEX_NAME_TARGET, ignore=[404])
     with open("index_target.json") as index_file:
         source = index_file.read().strip()
         client.indices.create(index=INDEX_NAME_TARGET, body=source)
+
+    dic_dir = ipadic.DICDIR
+    mecabrc = os.path.join(dic_dir, "mecabrc")
+    mecab_option = f'-d "{dic_dir}" -r "{mecabrc}" '
+    tokenizer = fugashi.GenericTagger(mecab_option)
     
     docs = []
     count = 0
@@ -46,7 +55,7 @@ def main(args):
         doc['text'] = ''
         with input_file.open(mode='r') as f:
             for line in f:
-                doc['text'] += line.strip()
+                doc['text'] += lemmatizer(line.strip(), tokenizer)
 
         docs.append(doc)
         count += 1

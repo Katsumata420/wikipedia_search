@@ -1,11 +1,15 @@
 import sys
 import json
+import os
 
 from lemmatizer import lemmatizer
 from pathlib import Path
 from elasticsearch import Elasticsearch
 from elasticsearch.helpers import bulk
 from joblib import Parallel, delayed
+
+import ipadic
+import fugashi
 
 
 client = Elasticsearch()
@@ -21,7 +25,7 @@ def index_batch(docs):
 def get_request(doc):
     return {"_op_type": "index",
             "_index": INDEX_NAME_SOURCE,
-            "text": lemmatizer(doc['text']),
+            "text": doc['text'],
             "title": doc['title'],
             "id": doc['id']
             }
@@ -35,6 +39,11 @@ def main(args):
     with open("index_wiki.json") as index_file:
         source = index_file.read().strip()
         client.indices.create(index=INDEX_NAME_SOURCE, body=source)
+
+    dic_dir = ipadic.DICDIR
+    mecabrc = os.path.join(dic_dir, "mecabrc")
+    mecab_option = f'-d "{dic_dir}" -r "{mecabrc}" '
+    tokenizer = fugashi.GenericTagger(mecab_option)
     
     docs = []
     count = 0
@@ -44,6 +53,7 @@ def main(args):
                 json_line = json.loads(line)
                 if "index" not in json_line:
                     doc = json_line
+                    doc["text"] = lemmatizer(doc["text"], tokenizer)
         
                     docs.append(doc)
                     count += 1
